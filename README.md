@@ -1,8 +1,4 @@
-<div class="filament-hidden">
-
 ![Laravel GitHub Contributions](https://raw.githubusercontent.com/jeffersongoncalves/laravel-github-contributions/master/art/jeffersongoncalves-laravel-github-contributions.png)
-
-</div>
 
 # Laravel GitHub Contributions
 
@@ -50,6 +46,12 @@ return [
     'user_agent' => env('GITHUB_CONTRIBUTIONS_USER_AGENT', 'laravel-github-contributions'),
 
     'timeout' => (int) env('GITHUB_CONTRIBUTIONS_TIMEOUT', 8),
+
+    // Cache responses (keyed by login) to stay under the 5000/hr API limit.
+    // Set ttl to 0 to disable caching entirely.
+    'cache' => [
+        'ttl' => (int) env('GITHUB_CONTRIBUTIONS_CACHE_TTL', 3600),
+    ],
 ];
 ```
 

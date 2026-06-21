@@ -34,4 +34,18 @@ return [
     |
     */
     'timeout' => (int) env('GITHUB_CONTRIBUTIONS_TIMEOUT', 8),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache
+    |--------------------------------------------------------------------------
+    |
+    | The GitHub GraphQL API is rate limited to 5000 requests per hour. To
+    | avoid a live call on every fetch(), responses are cached for "ttl"
+    | seconds, keyed by login. Set "ttl" to 0 to disable caching entirely.
+    |
+    */
+    'cache' => [
+        'ttl' => (int) env('GITHUB_CONTRIBUTIONS_CACHE_TTL', 3600),
+    ],
 ];

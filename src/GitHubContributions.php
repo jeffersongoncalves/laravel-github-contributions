@@ -2,6 +2,8 @@
 
 namespace JeffersonGoncalves\GitHubContributions;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class GitHubContributions
@@ -23,6 +25,30 @@ class GitHubContributions
             return ['cells' => [], 'total' => 0];
         }
 
+        $ttl = (int) config('github-contributions.cache.ttl', 3600);
+
+        if ($ttl <= 0) {
+            return self::request($login, $token);
+        }
+
+        return Cache::remember(
+            "github-contributions:{$login}",
+            $ttl,
+            fn (): array => self::request($login, $token)
+        );
+    }
+
+    /**
+     * Perform the live GraphQL request and map the response to heatmap cells.
+     *
+     * Honours the package's "graceful failure" contract: any connection
+     * problem (timeout, DNS failure, refused connection) or unsuccessful
+     * response yields an empty calendar instead of throwing.
+     *
+     * @return array{cells: list<int>, total: int}
+     */
+    private static function request(string $login, string $token): array
+    {
         $query = <<<'GQL'
         query($login: String!) {
           user(login: $login) {
@@ -42,15 +68,19 @@ class GitHubContributions
         }
         GQL;
 
-        $response = Http::timeout((int) config('github-contributions.timeout', 8))
-            ->withHeaders([
-                'Authorization' => "Bearer {$token}",
-                'User-Agent' => config('github-contributions.user_agent', 'laravel-github-contributions'),
-            ])
-            ->post('https://api.github.com/graphql', [
-                'query' => $query,
-                'variables' => ['login' => $login],
-            ]);
+        try {
+            $response = Http::timeout((int) config('github-contributions.timeout', 8))
+                ->withHeaders([
+                    'Authorization' => "Bearer {$token}",
+                    'User-Agent' => config('github-contributions.user_agent', 'laravel-github-contributions'),
+                ])
+                ->post('https://api.github.com/graphql', [
+                    'query' => $query,
+                    'variables' => ['login' => $login],
+                ]);
+        } catch (ConnectionException) {
+            return ['cells' => [], 'total' => 0];
+        }
 
         if (! $response->successful()) {
             return ['cells' => [], 'total' => 0];

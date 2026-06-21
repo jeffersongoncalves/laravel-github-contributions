@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use JeffersonGoncalves\GitHubContributions\GitHubContributions;
 
@@ -76,4 +78,65 @@ it('returns empty cells and zero total on a failed response', function () {
     $result = GitHubContributions::fetch('testuser');
 
     expect($result)->toBe(['cells' => [], 'total' => 0]);
+});
+
+it('returns empty cells and zero total when the connection fails', function () {
+    Http::fake(function () {
+        throw new ConnectionException('cURL error 28: Connection timed out');
+    });
+
+    $result = GitHubContributions::fetch('testuser');
+
+    expect($result)->toBe(['cells' => [], 'total' => 0]);
+});
+
+it('returns an empty calendar for an invalid login (data.user is null)', function () {
+    Http::fake([
+        'api.github.com/graphql' => Http::response([
+            'data' => ['user' => null],
+        ]),
+    ]);
+
+    $result = GitHubContributions::fetch('does-not-exist');
+
+    expect($result)->toBe(['cells' => [], 'total' => 0]);
+});
+
+it('sends the bearer token and the login graphql variable', function () {
+    config()->set('github-contributions.token', 'secret-token');
+
+    Http::fake([
+        'api.github.com/graphql' => Http::response(fakeCalendarResponse(total: 1)),
+    ]);
+
+    GitHubContributions::fetch('octocat');
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.github.com/graphql'
+            && $request->hasHeader('Authorization', 'Bearer secret-token')
+            && $request['variables']['login'] === 'octocat';
+    });
+});
+
+it('caches the response and only hits the api once', function () {
+    config()->set('github-contributions.cache.ttl', 3600);
+    Cache::flush();
+
+    Http::fake([
+        'api.github.com/graphql' => Http::response(fakeCalendarResponse([
+            [
+                'contributionDays' => [
+                    ['contributionCount' => 3, 'contributionLevel' => 'FIRST_QUARTILE', 'weekday' => 0],
+                ],
+            ],
+        ], total: 42)),
+    ]);
+
+    $first = GitHubContributions::fetch('cached-user');
+    $second = GitHubContributions::fetch('cached-user');
+
+    expect($first)->toBe($second)
+        ->and($first['total'])->toBe(42);
+
+    Http::assertSentCount(1);
 });
