@@ -5,6 +5,7 @@ namespace JeffersonGoncalves\GitHubContributions;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class GitHubContributions
 {
@@ -22,6 +23,10 @@ class GitHubContributions
         $token = config('github-contributions.token') ?: config('services.github.token');
 
         if (! $token) {
+            Log::warning('GitHub contributions: no API token configured; returning an empty calendar.', [
+                'login' => $login,
+            ]);
+
             return ['cells' => [], 'total' => 0];
         }
 
@@ -31,11 +36,24 @@ class GitHubContributions
             return self::request($login, $token);
         }
 
-        return Cache::remember(
-            "github-contributions:{$login}",
-            $ttl,
-            fn (): array => self::request($login, $token)
-        );
+        $key = "github-contributions:{$login}";
+
+        /** @var array{cells: list<int>, total: int}|null $cached */
+        $cached = Cache::get($key);
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $result = self::request($login, $token);
+
+        // Only cache a successful, non-empty calendar. Caching the empty failure
+        // sentinel would poison the cache for the whole TTL window.
+        if ($result['cells'] !== []) {
+            Cache::put($key, $result, $ttl);
+        }
+
+        return $result;
     }
 
     /**
@@ -83,6 +101,29 @@ class GitHubContributions
         }
 
         if (! $response->successful()) {
+            Log::warning('GitHub contributions: request failed.', [
+                'login' => $login,
+                'status' => $response->status(),
+                'rate_limit_remaining' => $response->header('X-RateLimit-Remaining'),
+                'retry_after' => $response->header('Retry-After'),
+            ]);
+
+            return ['cells' => [], 'total' => 0];
+        }
+
+        // A GraphQL endpoint can return HTTP 200 while still reporting errors in
+        // the body (e.g. rate limiting, bad credentials). Surface them instead
+        // of silently returning an empty calendar.
+        $errors = $response->json('errors');
+
+        if (! empty($errors)) {
+            Log::warning('GitHub contributions: GraphQL returned errors.', [
+                'login' => $login,
+                'errors' => $errors,
+                'rate_limit_remaining' => $response->header('X-RateLimit-Remaining'),
+                'retry_after' => $response->header('Retry-After'),
+            ]);
+
             return ['cells' => [], 'total' => 0];
         }
 
