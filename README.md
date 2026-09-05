@@ -2,6 +2,8 @@
 
 # Laravel GitHub Contributions
 
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/jeffersongoncalves)
+
 [![Tests](https://github.com/jeffersongoncalves/laravel-github-contributions/actions/workflows/run-tests.yml/badge.svg)](https://github.com/jeffersongoncalves/laravel-github-contributions/actions/workflows/run-tests.yml)
 [![PHPStan](https://github.com/jeffersongoncalves/laravel-github-contributions/actions/workflows/phpstan.yml/badge.svg)](https://github.com/jeffersongoncalves/laravel-github-contributions/actions/workflows/phpstan.yml)
 [![Code Style](https://github.com/jeffersongoncalves/laravel-github-contributions/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/jeffersongoncalves/laravel-github-contributions/actions/workflows/fix-php-code-style-issues.yml)
