@@ -1,4 +1,4 @@
-![Laravel GitHub Contributions](https://raw.githubusercontent.com/jeffersongoncalves/laravel-github-contributions/master/art/jeffersongoncalves-laravel-github-contributions.png)
+![Laravel GitHub Contributions](https://raw.githubusercontent.com/jeffersongoncalves/laravel-github-contributions/main/art/jeffersongoncalves-laravel-github-contributions.png)
 
 # Laravel GitHub Contributions
 
