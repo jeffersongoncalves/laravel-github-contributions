@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/jeffersongoncalves/laravel-github-contributions/commits/master/compare/v1.1.0...master)
+## [Unreleased](https://github.com/jeffersongoncalves/laravel-github-contributions/commits/master/compare/v1.1.1...main)
+
+## [v1.1.1](https://github.com/jeffersongoncalves/laravel-github-contributions/commits/master/compare/v1.1.0...v1.1.1) - 2026-10-28
+
+- Stop caching failed responses and surface GraphQL errors.
 
 ## [v1.1.0](https://github.com/jeffersongoncalves/laravel-github-contributions/commits/master/compare/master...v1.1.0) - 2026-06-21
 
